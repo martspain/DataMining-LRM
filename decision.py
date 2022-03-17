@@ -222,6 +222,37 @@ class main(object):
         print ("Precision:", metrics.precision_score(y_test,y_pred,average="weighted", zero_division=1) )
         print ("Recall: ", metrics.recall_score(y_test,y_pred,average="weighted", zero_division=1))
         
+    def residualAndSize(self, p_length_t, p_length_pred):
+        residuales = p_length_t - p_length_pred
+        return len(residuales), residuales
+    
+    def residualPlot(self, p_width_t, residuales):
+        plt.plot(p_width_t,residuales, 'o', color='darkblue')
+        plt.title("Gráfico de Residuales")
+        plt.xlabel("Variable independiente")
+        plt.ylabel("Residuales")
+
+    def residualDist(self, residuales):
+        sns.distplot(residuales);
+        plt.title("Residuales")
+
+    def residualBox(self, residuales):
+        plt.boxplot(residuales)
+
+    def residualNormal(self, residuales):
+        return normaltest(residuales)
+    
+    def qualityModel(self, p_length_t, p_length_pred, p_width_t):
+        residualLen, residuales = self.residualAndSize(self, p_length_t, p_length_pred)
+        self.residualPlot(p_width_t, residuales)
+        #self.residualDist(residuales)
+        #self.residualBox(residuales)
+        #self.residualNormal(residuales)
+
+
+
+
+
 
 
 driver = main('train.csv')
