@@ -8,13 +8,17 @@ import numpy as np
 import sklearn
 from sklearn import tree
 from sklearn import metrics
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 # from fcmeans import FCM
 # import pyclustertend
 from sklearn import cluster 
 # from sklearn import RandomForestClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.pipeline import make_pipeline
 from reader import Reader
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import cross_validate
 
 
 
@@ -137,6 +141,13 @@ class main(object):
         
         return X_train, X_test,y_train, y_test, df
 
+    def normalizeData(self):
+        X_train, X_test,y_train, y_test, df = self.trainTest()
+        
+        model = make_pipeline(StandardScaler(), LogisticRegression())
+        cv_result = cross_validate(model,X_train, y_train, cv=5 )
+        return cv_result
+
     def treeDepth(self):
         
         X_train, X_test,y_train, y_test, df = self.trainTest()
@@ -219,5 +230,6 @@ driver = main('train.csv')
 #print(driver.hopkins()[0])
 #driver.fuzzy_cMeans()
 # print(driver.clusterNum())
-driver.regression_tree()
+# driver.regression_tree()
+print(driver.normalizeData())
     
