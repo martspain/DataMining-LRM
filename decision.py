@@ -17,7 +17,7 @@ from sklearn.model_selection import cross_validate
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error,r2_score
 from scipy.stats import normaltest
-
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 
 class main(object):
@@ -173,11 +173,19 @@ class main(object):
         plt.plot(y_pred, x_t, color="blue", markersize=2)
         plt.xlabel('OverallQual')
         plt.ylabel('SalePrice')
-        plt.title("Conjunto de prueba OverallQual vs SalePrice")
+        plt.title("Conjunto de entrenamiento OverallQual vs SalePrice")
         plt.show()
 
-        return y_tr, y_t, x_tr, x_t, y_pred
+        # return y_tr, y_t, x_tr, x_t, y_pred
 
+    def multicollinearity(self):
+        X_train, X_test,y_train, y_test, X, y = self.trainTest()
+        
+        vif_data = pd.DataFrame()
+        vif_data['feature'] = X.columns
+        vif_data['VIF'] = [variance_inflation_factor(X, i) for i in range(len(X.columns))]
+
+        print(vif_data)
     def residualAndSize(self, y_t, y_pred):
         residuales = y_t - y_pred
         return len(residuales), residuales
@@ -211,5 +219,5 @@ class main(object):
 driver = main('train.csv')
 
 
-print(driver.linear_regression())
+print(driver.multicollinearity())
     
