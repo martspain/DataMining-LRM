@@ -1,7 +1,6 @@
 from locale import normalize
 import random
-from re import X
-from tkinter import Y
+import seaborn as sns
 from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
@@ -19,8 +18,9 @@ from sklearn.pipeline import make_pipeline
 from reader import Reader
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_validate
-
-
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error,r2_score
+from scipy.stats import normaltest
 
 
 
@@ -119,15 +119,17 @@ class main(object):
 
         # c_df = df.copy()
        
+       # CAMBIOOOOOO 1
 
-        y = df.pop('SalePrice')
+        # y = df.pop('SalePrice')
         column_names = ['LotArea','OverallQual', 'TotRmsAbvGrd', 'GarageCars', 'FullBath']
        
-        X = np.array(df[column_names])
+        # X = np.array(df[column_names])
 
-        df = pd.DataFrame(df, columns=column_names)
+        X = df.loc[:, column_names]
+        y = df[['SalePrice']]
 
-        
+        # df = pd.DataFrame(df, columns=column_names)
 
         random.seed(123)
         
@@ -139,10 +141,10 @@ class main(object):
         
         #X_train, X_test,y_train, y_test = train_test_split(X, Y, random_state=10, test_size=0.3,train_size=0.7)
         
-        return X_train, X_test,y_train, y_test, df
+        return X_train, X_test,y_train, y_test, X, y, df
 
     def normalizeData(self):
-        X_train, X_test,y_train, y_test, df = self.trainTest()
+        X_train, X_test,y_train, y_test, X, y = self.trainTest()
         
         model = make_pipeline(StandardScaler(), LogisticRegression())
         cv_result = cross_validate(model,X_train, y_train, cv=5 )
@@ -150,7 +152,7 @@ class main(object):
 
     def treeDepth(self):
         
-        X_train, X_test,y_train, y_test, df = self.trainTest()
+        X_train, X_test,y_train, y_test, X, y = self.trainTest()
 
         train_accuracy = []
         test_accuracy = []
@@ -179,14 +181,14 @@ class main(object):
         # EL DEPTH ES DE 3
 
     def decision_tree(self):
-        
-        X_train, X_test,y_train, y_test, df = self.trainTest()
+        # CAMBIOOOOO2
+        X_train, X_test,y_train, y_test, X, y = self.trainTest()
        
 
         dt = tree.DecisionTreeClassifier(max_depth=3, random_state=10)
         dt.fit(X_train, y_train)
 
-        feature_names = df.columns
+        feature_names = X.columns
         tree.export_graphviz(dt, out_file='tree.dot', feature_names=feature_names, class_names=True, max_depth=2)
         
 
@@ -201,7 +203,7 @@ class main(object):
     
     def regression_tree(self):
         
-        X_train, X_test,y_train, y_test, df = self.trainTest()
+        X_train, X_test,y_train, y_test, X, y, df = self.trainTest()
        
 
         rt = tree.DecisionTreeRegressor(max_depth=3, random_state=10)
@@ -211,8 +213,8 @@ class main(object):
         tree.export_graphviz(rt, out_file='regression_tree.dot', feature_names=feature_names, class_names=True, max_depth=2)
 
     def random_forest(self):
-        
-        X_train, X_test,y_train, y_test, df = self.trainTest()
+        #CAMBIOOO2
+        X_train, X_test,y_train, y_test, X, y, df = self.trainTest()
        
         rf = RandomForestClassifier(max_depth=3, random_state=10)
         rf.fit(X_train, y_train)
@@ -222,12 +224,42 @@ class main(object):
         print ("Precision:", metrics.precision_score(y_test,y_pred,average="weighted", zero_division=1) )
         print ("Recall: ", metrics.recall_score(y_test,y_pred,average="weighted", zero_division=1))
         
-    def residualAndSize(self, p_length_t, p_length_pred):
-        residuales = p_length_t - p_length_pred
+
+    # CAMBIOOOOOOO
+    def linear_regression(self):
+        X_train, X_test,y_train, y_test, X, y, df = self.trainTest()
+        y_tr = y_train.values.reshape(-1, 1)
+        y_t = y_test.values.reshape(-1, 1)
+
+        x_tr = X_train['OverallQual'].values.reshape(-1, 1)
+        x_t = X_test['OverallQual'].values.reshape(-1, 1)
+
+        lm = LinearRegression()
+        lm.fit(x_tr, y_tr)
+        y_pred = lm.predict(x_t)
+        
+        m = lm.coef_[0][0]
+        c = lm.intercept_[0]
+
+        print("Mean Squared Error: %.2f"%mean_squared_error(y_t, y_pred))
+        print("R2: %.2f"%r2_score(y_t, y_pred))
+
+
+        plt.scatter(y_t, x_t,  s=2)
+        plt.plot(y_pred, x_t, color="blue", markersize=2)
+        plt.xlabel('OverallQual')
+        plt.ylabel('SalePrice')
+        plt.title("Conjunto de prueba OverallQual vs SalePrice")
+        plt.show()
+
+        return y_tr, y_t, x_tr, x_t, y_pred
+
+    def residualAndSize(self, y_t, y_pred):
+        residuales = y_t - y_pred
         return len(residuales), residuales
     
-    def residualPlot(self, p_width_t, residuales):
-        plt.plot(p_width_t,residuales, 'o', color='darkblue')
+    def residualPlot(self, x_t, residuales):
+        plt.plot(x_t,residuales, 'o', color='darkblue')
         plt.title("Gráfico de Residuales")
         plt.xlabel("Variable independiente")
         plt.ylabel("Residuales")
@@ -242,17 +274,14 @@ class main(object):
     def residualNormal(self, residuales):
         return normaltest(residuales)
     
-    def qualityModel(self, p_length_t, p_length_pred, p_width_t):
-        residualLen, residuales = self.residualAndSize(self, p_length_t, p_length_pred)
-        self.residualPlot(p_width_t, residuales)
+    def qualityModel(self, y_t, y_pred, x_t):
+        residualLen, residuales = self.residualAndSize(self, y_t, y_pred)
+        self.residualPlot(x_t, residuales)
         #self.residualDist(residuales)
         #self.residualBox(residuales)
         #self.residualNormal(residuales)
 
-
-
-
-
+        
 
 
 driver = main('train.csv')
@@ -262,5 +291,5 @@ driver = main('train.csv')
 #driver.fuzzy_cMeans()
 # print(driver.clusterNum())
 # driver.regression_tree()
-print(driver.normalizeData())
+print(driver.linear_regression())
     
