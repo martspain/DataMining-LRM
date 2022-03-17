@@ -4,15 +4,11 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
-import sklearn
 from sklearn import tree
 from sklearn import metrics
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
-# from fcmeans import FCM
-# import pyclustertend
 from sklearn import cluster 
-# from sklearn import RandomForestClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import make_pipeline
 from reader import Reader
@@ -31,8 +27,7 @@ class main(object):
         # Classes
         R = Reader(csvFilePath)
         self.df = R.data
-        
-
+    
     def shape(self):
         df = self.df
 
@@ -40,52 +35,6 @@ class main(object):
         print(df.head())
         print(df.isnull().sum())
 
-    # def hopkins(self):
-    #     df = self.df
-    #     column_names = ['LotArea','OverallQual', 'TotRmsAbvGrd', 'GarageCars', 'FullBath']
-    #     row_names = ['SalePrice']
-    #     self.X = np.array(df[column_names])
-    #     X = self.X
-    #     self.Y = np.array(df[row_names])
-        
-    #     Y = self.Y
-    #     random.seed(10000)
-    #     X_scale = sklearn.preprocessing.scale(X)
-    #     hop = pyclustertend.hopkins(X,len(X))
-        
-    #     # df = pd.DataFrame(df, columns=column_names)
-    #     return hop, X_scale, X, Y
-
-    # fuzzy c-means algorithms 
-    # def fuzzy_cMeans(self):
-    #     hop, X_scale, X, Y = self.hopkins()
-        
-    #     fcm = FCM(n_clusters = 5)
-    #     fcm.fit(X)
-
-    #     fcm_centers = fcm.centers
-    #     fcm_labels = fcm.predict(X)
-
-    #     plt.title("Grouping by Fuzzy C-Means")
-
-    #     plt.scatter(X[:,0],X[:,1], c=fcm_labels, cmap='plasma')
-    #     plt.scatter(fcm_centers[:,0],fcm_centers[:,1], c='green', marker='v')
-    #     plt.show()
-        
-    # def clusterNum(self):
-    #     hop, X_scale, X, Y = self.hopkins()
-    #     numeroClusters = range(1,11)
-    #     wcss = []
-    #     for i in numeroClusters:
-    #         kmeans = cluster.KMeans(n_clusters=i)
-    #         kmeans.fit(X_scale)
-    #         wcss.append(kmeans.inertia_)
-        # plt.plot(numeroClusters, wcss)
-        # plt.xlabel("Número de clusters")
-        # plt.ylabel("Score")
-        # plt.title("Gráfico de Codo")
-        # plt.show()
-    
     def percentile(self):
         x = self.df['SalePrice']
         threshold = x.quantile([0.33,0.67])
@@ -114,34 +63,17 @@ class main(object):
         
     def trainTest(self):
         df = self.df
-        # hop, X_scale, X, Y = self.hopkins()
-        # df = df.copy()
 
-        # c_df = df.copy()
-       
-       # CAMBIOOOOOO 1
-
-        # y = df.pop('SalePrice')
         column_names = ['LotArea','OverallQual', 'TotRmsAbvGrd', 'GarageCars', 'FullBath']
-       
-        # X = np.array(df[column_names])
 
         X = df.loc[:, column_names]
         y = df[['SalePrice']]
 
-        # df = pd.DataFrame(df, columns=column_names)
-
         random.seed(123)
-        
 
         X_train, X_test,y_train, y_test = train_test_split(X, y,test_size=0.3,train_size=0.7)
-        
-        # df = df[['SalePrice', 'LotArea','OverallQual', 'TotRmsAbvGrd', 'GarageCars', 'FullBath']]
-        # df
-        
-        #X_train, X_test,y_train, y_test = train_test_split(X, Y, random_state=10, test_size=0.3,train_size=0.7)
-        
-        return X_train, X_test,y_train, y_test, X, y, df
+
+        return X_train, X_test,y_train, y_test, X, y
 
     def normalizeData(self):
         X_train, X_test,y_train, y_test, X, y = self.trainTest()
@@ -169,14 +101,6 @@ class main(object):
         frame = pd.DataFrame({'max_depth':range(1, 10), 'train_acc':train_accuracy, 'test_acc':test_accuracy})
         print(frame.head())
 
-        # plt.figure(figsize=(12, 6))
-        # plt.plot(frame['max_depth'], frame['train_acc'], marker='o')
-        # plt.plot(frame['max_depth'], frame['test_acc'], marker='o')
-        # plt.xlabel('Depth of tree')
-        # plt.ylabel('Performance')
-        # plt.legend()
-        # plt.show()
-
 
         # EL DEPTH ES DE 3
 
@@ -203,18 +127,18 @@ class main(object):
     
     def regression_tree(self):
         
-        X_train, X_test,y_train, y_test, X, y, df = self.trainTest()
+        X_train, X_test,y_train, y_test, X, y = self.trainTest()
        
 
         rt = tree.DecisionTreeRegressor(max_depth=3, random_state=10)
         rt.fit(X_train, y_train)
 
-        feature_names = df.columns
+        feature_names = X.columns
         tree.export_graphviz(rt, out_file='regression_tree.dot', feature_names=feature_names, class_names=True, max_depth=2)
 
     def random_forest(self):
         #CAMBIOOO2
-        X_train, X_test,y_train, y_test, X, y, df = self.trainTest()
+        X_train, X_test,y_train, y_test, X, y = self.trainTest()
        
         rf = RandomForestClassifier(max_depth=3, random_state=10)
         rf.fit(X_train, y_train)
@@ -227,7 +151,7 @@ class main(object):
 
     # CAMBIOOOOOOO
     def linear_regression(self):
-        X_train, X_test,y_train, y_test, X, y, df = self.trainTest()
+        X_train, X_test,y_train, y_test, X, y = self.trainTest()
         y_tr = y_train.values.reshape(-1, 1)
         y_t = y_test.values.reshape(-1, 1)
 
@@ -265,7 +189,7 @@ class main(object):
         plt.ylabel("Residuales")
 
     def residualDist(self, residuales):
-        sns.distplot(residuales);
+        sns.distplot(residuales)
         plt.title("Residuales")
 
     def residualBox(self, residuales):
@@ -286,10 +210,6 @@ class main(object):
 
 driver = main('train.csv')
 
-# driver.exploreData()
-#print(driver.hopkins()[0])
-#driver.fuzzy_cMeans()
-# print(driver.clusterNum())
-# driver.regression_tree()
+
 print(driver.linear_regression())
     
